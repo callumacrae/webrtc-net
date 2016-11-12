@@ -52,7 +52,7 @@ PeerNet.prototype.getToken = function getToken() {
 					channel.onopen = () => {
 						this.directPeers.push({ pc, channel });
 						socket.close();
-						this.emit('connected');
+						this.emit('connect');
 					};
 				};
 
