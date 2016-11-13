@@ -173,7 +173,7 @@ describe('Peernet simple connection', () => {
 
 		// if peernet2 emits anything, error
 		peernet2.on('insecureDm', () => {
-			should.fail('Insecure DM receieved on peer 2: wrong!');
+			should.fail('Insecure DM received on peer 2: wrong!');
 		});
 
 		peernet1.on('insecureDm', (msg, e) => {
