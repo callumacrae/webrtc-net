@@ -22,10 +22,10 @@ describe('Peernet simple connection', () => {
 		const peernet3 = new PeerNet();
 
 		peernet1.getToken()
-			.then((token) => peernet3.invite(token));
+			.then((token) => peernet2.invite(token));
 
-		peernet2.getToken()
-			.then((token) => peernet3.invite(token));
+		peernet3.getToken()
+			.then((token) => peernet2.invite(token));
 
 		let connected = 0;
 
@@ -36,7 +36,7 @@ describe('Peernet simple connection', () => {
 			}
 		});
 
-		peernet2.on('connect', () => {
+		peernet3.on('connect', () => {
 			connected++;
 			if (connected === 2) {
 				finishTest();
@@ -45,9 +45,26 @@ describe('Peernet simple connection', () => {
 
 		function finishTest() {
 			peernet1.directPeers.length.should.equal(1);
-			peernet2.directPeers.length.should.equal(1);
-			peernet3.directPeers.length.should.equal(2);
+			peernet2.directPeers.length.should.equal(2);
+			peernet3.directPeers.length.should.equal(1);
 			done();
 		}
+	});
+
+	it('should send message', (done) => {
+		const peernet1 = new PeerNet();
+		const peernet2 = new PeerNet();
+
+		peernet1.getToken()
+			.then((token) => peernet2.invite(token));
+
+		peernet1.on('connect', () => {
+			peernet1.send('message', 'hello world');
+		});
+
+		peernet2.on('message', (msg) => {
+			msg.should.equal('hello world');
+			done();
+		});
 	});
 });

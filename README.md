@@ -20,7 +20,7 @@ const token = peernet.getToken();
 peernetRemote.invite(token);
 
 // Broadcast
-peernet.emit('message', { some: 'object' });
+peernet.send('message', { some: 'object' });
 peernet.on('message', (obj) => console.log(obj));
 
 // Channel

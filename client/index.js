@@ -50,7 +50,7 @@ PeerNet.prototype.getToken = function getToken() {
 				pc.ondatachannel = (e) => {
 					channel = e.channel;
 					channel.onopen = () => {
-						this.directPeers.push({ pc, channel });
+						this._addDirectPeer(pc, channel);
 						socket.close();
 						this.emit('connect');
 					};
@@ -119,8 +119,29 @@ PeerNet.prototype.invite = function inviteToken(token) {
 		channel = pc.createDataChannel('sendDataChannel');
 		channel.binaryType = 'arraybuffer';
 		channel.onopen = () => {
-			this.directPeers.push({ pc, channel });
+			this._addDirectPeer(pc, channel);
 			socket.close();
 		};
 	};
+};
+
+PeerNet.prototype._addDirectPeer = function (pc, channel) {
+	this.directPeers.push({ pc, channel });
+
+	channel.onmessage = (e) => {
+		const data = JSON.parse(e.data);
+
+		if (['connect', 'disconnect'].includes(data.type)) {
+			console.error(`Illegal reserved type ${data.type} received`);
+			return;
+		}
+
+		this.emit(data.type, data.data);
+	};
+};
+
+PeerNet.prototype.send = function sendMessage(type, data) {
+	this.directPeers.forEach((peer) => {
+		peer.channel.send(JSON.stringify({ type, data, hops: 0 }));
+	});
 };
