@@ -11,6 +11,7 @@ function PeerNet(config) {
 }
 
 PeerNet.prototype = Object.create(EventEmitter.prototype);
+PeerNet.prototype.messageHandlers = {};
 
 PeerNet.prototype.getToken = function getToken() {
 	return new Promise((resolve) => {
@@ -132,6 +133,10 @@ PeerNet.prototype.invite = function inviteToken(token) {
 	};
 };
 
+PeerNet.prototype.messageHandlers.token = function handleToken(data, peerObj) {
+	peerObj.token = data.token;
+};
+
 PeerNet.prototype._addDirectPeer = function (pc, channel) {
 	const peerObj = { pc, channel };
 	this.directPeers.push(peerObj);
@@ -144,11 +149,6 @@ PeerNet.prototype._addDirectPeer = function (pc, channel) {
 	channel.onmessage = (e) => {
 		const data = JSON.parse(e.data);
 
-		if (data.type === 'token') {
-			peerObj.token = data.token;
-			return;
-		}
-
 		// Ignore if it was already received from another peer
 		const found = this.receivedMessages.find(({ id }) => id === data.id);
 		if (found) {
@@ -158,27 +158,8 @@ PeerNet.prototype._addDirectPeer = function (pc, channel) {
 
 		data.hops++;
 
-		if (data.type === 'message') {
-			this.emit('message', data.data, data);
-
-			data.path.push(this.token);
-
-			// Find all channels that aren't the one we just received from and send
-			this.directPeers
-				.filter((peer) => peer.pc !== pc)
-				.forEach((peer) => {
-					peer.channel.send(JSON.stringify(data));
-				});
-		}
-
-		if (data.type === 'insecureDm') {
-			if (data.path[0] === this.token) {
-				this.emit('insecureDm', data.data, data);
-			} else {
-				const nextToken = data.path[data.path.indexOf(this.token) - 1];
-				const nextPeer = this.directPeers.find(({ token }) => token === nextToken);
-				nextPeer.channel.send(JSON.stringify(data));
-			}
+		if (typeof this.messageHandlers[data.type] === 'function') {
+			this.messageHandlers[data.type].call(this, data, peerObj);
 		}
 	};
 };
@@ -197,6 +178,19 @@ PeerNet.prototype.broadcast = function sendMessage(data) {
 	});
 };
 
+PeerNet.prototype.messageHandlers.message = function handleMessage(data, peerObj) {
+	this.emit('message', data.data, data);
+
+	data.path.push(this.token);
+
+	// Find all channels that aren't the one we just received from and send
+	this.directPeers
+		.filter((peer) => peer.pc !== peerObj.pc)
+		.forEach((peer) => {
+			peer.channel.send(JSON.stringify(data));
+		});
+};
+
 PeerNet.prototype.insecureDm = function sendInsecureDm(toPath, data) {
 	const toToken = toPath[toPath.length - 1];
 	const toPeer = this.directPeers.find(({ token }) => token === toToken);
@@ -210,4 +204,14 @@ PeerNet.prototype.insecureDm = function sendInsecureDm(toPath, data) {
 		path: toPath, // Inverse of broadcast
 		time: Date.now()
 	}));
+};
+
+PeerNet.prototype.messageHandlers.insecureDm = function handleInsecureDm(data) {
+	if (data.path[0] === this.token) {
+		this.emit('insecureDm', data.data, data);
+	} else {
+		const nextToken = data.path[data.path.indexOf(this.token) - 1];
+		const nextPeer = this.directPeers.find(({ token }) => token === nextToken);
+		nextPeer.channel.send(JSON.stringify(data));
+	}
 };
