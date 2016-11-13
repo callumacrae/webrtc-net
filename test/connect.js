@@ -103,7 +103,7 @@ describe('Peernet simple connection', () => {
 		peernet1.on('connect', () => {
 			connected++;
 			if (connected === 2) {
-				peernet1.broadcast('omg');
+				peernet1.broadcast([1, 2, 4]);
 			}
 		});
 
@@ -134,6 +134,58 @@ describe('Peernet simple connection', () => {
 
 			e.path[0].should.be.a.Number();
 			e.path[1].should.be.a.Number();
+
+			done();
+		});
+	});
+
+	it('should support insecure DMing', (done) => {
+		const peernet1 = new PeerNet();
+		const peernet2 = new PeerNet();
+		const peernet3 = new PeerNet();
+
+		peernet1.getToken()
+			.then((token) => peernet2.invite(token));
+
+		peernet3.getToken()
+			.then((token) => peernet2.invite(token));
+
+		let connected = 0;
+
+		peernet1.on('connect', () => {
+			connected++;
+			if (connected === 2) {
+				peernet1.broadcast('test');
+			}
+		});
+
+		peernet3.on('connect', () => {
+			connected++;
+			if (connected === 2) {
+				peernet1.broadcast('test');
+			}
+		});
+
+		peernet3.on('message', (msg, e) => {
+			// Reply using insecure DM
+			peernet3.insecureDm(e.path, { hello: 'peer' })
+		});
+
+		// if peernet2 emits anything, error
+		peernet2.on('insecureDm', () => {
+			should.fail('Insecure DM receieved on peer 2: wrong!');
+		});
+
+		peernet1.on('insecureDm', (msg, e) => {
+			msg.should.eql({ hello: 'peer' });
+			e.data.should.equal(msg);
+			e.hops.should.equal(2);
+			e.path.length.should.equal(2);
+
+			e.path[0].should.be.a.Number();
+			e.path[1].should.be.a.Number();
+
+			e.origin.should.be.a.Number();
 
 			done();
 		});

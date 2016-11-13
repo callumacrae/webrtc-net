@@ -170,6 +170,16 @@ PeerNet.prototype._addDirectPeer = function (pc, channel) {
 					peer.channel.send(JSON.stringify(data));
 				});
 		}
+
+		if (data.type === 'insecureDm') {
+			if (data.path[0] === this.token) {
+				this.emit('insecureDm', data.data, data);
+			} else {
+				const nextToken = data.path[data.path.indexOf(this.token) - 1];
+				const nextPeer = this.directPeers.find(({ token }) => token === nextToken);
+				nextPeer.channel.send(JSON.stringify(data));
+			}
+		}
 	};
 };
 
@@ -185,4 +195,19 @@ PeerNet.prototype.broadcast = function sendMessage(data) {
 			time: Date.now()
 		}));
 	});
+};
+
+PeerNet.prototype.insecureDm = function sendInsecureDm(toPath, data) {
+	const toToken = toPath[toPath.length - 1];
+	const toPeer = this.directPeers.find(({ token }) => token === toToken);
+
+	toPeer.channel.send(JSON.stringify({
+		id: Math.floor(Math.random() * 1e9).toString(), // @todo: better ID
+		type: 'insecureDm',
+		data,
+		hops: 0,
+		origin: this.token,
+		path: toPath, // Inverse of broadcast
+		time: Date.now()
+	}));
 };
