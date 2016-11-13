@@ -4,6 +4,8 @@ function PeerNet(config) {
 	this.directPeers = [];
 	this.receivedMessages = [];
 
+	this.token = undefined;
+
 	// Adds _event and _eventsCount properties
 	EventEmitter.call(this);
 }
@@ -20,7 +22,7 @@ PeerNet.prototype.getToken = function getToken() {
 			var data = JSON.parse(e.data);
 
 			if (data.type === 'token') {
-				token = data.token;
+				this.token = token = data.token;
 				resolve(data.token);
 			} else if (data.type === 'offer') {
 				pc = new RTCPeerConnection(
@@ -80,6 +82,10 @@ PeerNet.prototype.invite = function inviteToken(token) {
 
 	var socket = new WebSocket('ws://localhost:9001');
 
+	if (!this.token) {
+		this.token = Math.floor(Math.random() * 1e10);
+	}
+
 	socket.onmessage = function(e) {
 		var data = JSON.parse(e.data);
 
@@ -127,13 +133,24 @@ PeerNet.prototype.invite = function inviteToken(token) {
 };
 
 PeerNet.prototype._addDirectPeer = function (pc, channel) {
-	this.directPeers.push({ pc, channel });
+	const peerObj = { pc, channel };
+	this.directPeers.push(peerObj);
+
+	channel.send(JSON.stringify({
+		type: 'token',
+		token: this.token
+	}));
 
 	channel.onmessage = (e) => {
 		const data = JSON.parse(e.data);
 
 		if (['connect', 'disconnect'].includes(data.type)) {
 			console.error(`Illegal reserved type ${data.type} received`);
+			return;
+		}
+
+		if (data.type === 'token') {
+			peerObj.token = data.token;
 			return;
 		}
 
@@ -144,13 +161,16 @@ PeerNet.prototype._addDirectPeer = function (pc, channel) {
 		}
 		this.receivedMessages.push(data);
 
+		data.hops++;
+
 		this.emit(data.type, data.data, data);
+
+		data.path.push(this.token);
 
 		// Find all channels that aren't the one we just received from and send
 		this.directPeers
 			.filter((peer) => peer.pc !== pc)
 			.forEach((peer) => {
-				data.hops++;
 				peer.channel.send(JSON.stringify(data));
 			});
 	};
@@ -163,6 +183,8 @@ PeerNet.prototype.send = function sendMessage(type, data) {
 			type,
 			data,
 			hops: 0,
+			origin: this.token,
+			path: [this.token],
 			time: Date.now()
 		}));
 	});

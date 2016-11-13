@@ -120,14 +120,21 @@ describe('Peernet simple connection', () => {
 			peer2Received = true;
 			msg.should.eql([1, 2, 4]);
 			e.data.should.equal(msg);
-			e.hops.should.equal(0);
+			e.hops.should.equal(1);
+			e.path.length.should.equal(1);
+			e.path[0].should.be.a.Number();
 		});
 
 		peernet3.on('message', (msg, e) => {
 			peer2Received.should.equal(true);
 			msg.should.eql([1, 2, 4]);
 			e.data.should.equal(msg);
-			e.hops.should.equal(1);
+			e.hops.should.equal(2);
+			e.path.length.should.equal(2);
+
+			e.path[0].should.be.a.Number();
+			e.path[1].should.be.a.Number();
+
 			done();
 		});
 	});
