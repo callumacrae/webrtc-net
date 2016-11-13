@@ -67,4 +67,21 @@ describe('Peernet simple connection', () => {
 			done();
 		});
 	});
+
+	it('should send non-string message', (done) => {
+		const peernet1 = new PeerNet();
+		const peernet2 = new PeerNet();
+
+		peernet1.getToken()
+			.then((token) => peernet2.invite(token));
+
+		peernet1.on('connect', () => {
+			peernet1.send('message', [1, 2, 3]);
+		});
+
+		peernet2.on('message', (msg) => {
+			msg.should.eql([1, 2, 3]);
+			done();
+		});
+	});
 });
