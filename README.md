@@ -11,23 +11,23 @@ Recommended reading: http://medianetlab.ee.ucla.edu/papers/chapter_P2P_hpark.pdf
 (most of this doesn't work yet)
 
 ```js
-const peernet = new PeerNet({ id: 'callumacrae' });
-const peernetRemote = new PeerNet({ id: 'remoteUser' });
+const peernet = new PeerNet();
+const peernetRemote = new PeerNet();
 
 // Setup
-peernetRemote.createNetwork(); // not even sure this is needed
 const token = peernet.getToken();
 peernetRemote.invite(token);
 
 // Broadcast
-peernet.send('message', { some: 'object' });
+peernet.broadcast({ some: 'object' });
 peernet.on('message', (obj) => console.log(obj));
+
+peernet.insecureDm(token, 'insecure DM content');
 
 // Channel
 const channel = peernet.channel('remoteUser');
-channel.open(); // Do this automatically
-channel.on('slap', () => console.log('ouch!'));
-channel.emit('slap');
+channel.on('message', (msg) => console.log(msg));
+channel.send('test message');
 
 // Stats
 peernet.stats(); // number of people, packet loss, stuff

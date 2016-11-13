@@ -144,11 +144,6 @@ PeerNet.prototype._addDirectPeer = function (pc, channel) {
 	channel.onmessage = (e) => {
 		const data = JSON.parse(e.data);
 
-		if (['connect', 'disconnect'].includes(data.type)) {
-			console.error(`Illegal reserved type ${data.type} received`);
-			return;
-		}
-
 		if (data.type === 'token') {
 			peerObj.token = data.token;
 			return;
@@ -163,24 +158,26 @@ PeerNet.prototype._addDirectPeer = function (pc, channel) {
 
 		data.hops++;
 
-		this.emit(data.type, data.data, data);
+		if (data.type === 'message') {
+			this.emit('message', data.data, data);
 
-		data.path.push(this.token);
+			data.path.push(this.token);
 
-		// Find all channels that aren't the one we just received from and send
-		this.directPeers
-			.filter((peer) => peer.pc !== pc)
-			.forEach((peer) => {
-				peer.channel.send(JSON.stringify(data));
-			});
+			// Find all channels that aren't the one we just received from and send
+			this.directPeers
+				.filter((peer) => peer.pc !== pc)
+				.forEach((peer) => {
+					peer.channel.send(JSON.stringify(data));
+				});
+		}
 	};
 };
 
-PeerNet.prototype.send = function sendMessage(type, data) {
+PeerNet.prototype.broadcast = function sendMessage(data) {
 	this.directPeers.forEach((peer) => {
 		peer.channel.send(JSON.stringify({
 			id: Math.floor(Math.random() * 1e9).toString(), // @todo: better ID
-			type,
+			type: 'message',
 			data,
 			hops: 0,
 			origin: this.token,

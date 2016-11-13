@@ -51,7 +51,7 @@ describe('Peernet simple connection', () => {
 		}
 	});
 
-	it('should send message', (done) => {
+	it('should broadcast message', (done) => {
 		const peernet1 = new PeerNet();
 		const peernet2 = new PeerNet();
 
@@ -59,7 +59,7 @@ describe('Peernet simple connection', () => {
 			.then((token) => peernet2.invite(token));
 
 		peernet1.on('connect', () => {
-			peernet1.send('message', 'hello world');
+			peernet1.broadcast('hello world');
 		});
 
 		peernet2.on('message', (msg, e) => {
@@ -69,7 +69,7 @@ describe('Peernet simple connection', () => {
 		});
 	});
 
-	it('should send non-string message', (done) => {
+	it('should broadcast non-string message', (done) => {
 		const peernet1 = new PeerNet();
 		const peernet2 = new PeerNet();
 
@@ -77,7 +77,7 @@ describe('Peernet simple connection', () => {
 			.then((token) => peernet2.invite(token));
 
 		peernet1.on('connect', () => {
-			peernet1.send('message', [1, 2, 3]);
+			peernet1.broadcast([1, 2, 3]);
 		});
 
 		peernet2.on('message', (msg, e) => {
@@ -87,7 +87,7 @@ describe('Peernet simple connection', () => {
 		});
 	});
 
-	it('should send data through multiple peers', (done) => {
+	it('should broadcast data through multiple peers', (done) => {
 		const peernet1 = new PeerNet();
 		const peernet2 = new PeerNet();
 		const peernet3 = new PeerNet();
@@ -103,14 +103,14 @@ describe('Peernet simple connection', () => {
 		peernet1.on('connect', () => {
 			connected++;
 			if (connected === 2) {
-				peernet1.send('message', 'omg');
+				peernet1.broadcast('omg');
 			}
 		});
 
 		peernet3.on('connect', () => {
 			connected++;
 			if (connected === 2) {
-				peernet1.send('message', [1, 2, 4]);
+				peernet1.broadcast([1, 2, 4]);
 			}
 		});
 
