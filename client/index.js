@@ -2,6 +2,7 @@ var RTCPeerConnection = webkitRTCPeerConnection;
 
 function PeerNet(config) {
 	this.directPeers = [];
+	this.receivedMessages = [];
 
 	// Adds _event and _eventsCount properties
 	EventEmitter.call(this);
@@ -136,12 +137,33 @@ PeerNet.prototype._addDirectPeer = function (pc, channel) {
 			return;
 		}
 
-		this.emit(data.type, data.data);
+		// Ignore if it was already received from another peer
+		const found = this.receivedMessages.find(({ id }) => id === data.id);
+		if (found) {
+			return;
+		}
+		this.receivedMessages.push(data);
+
+		this.emit(data.type, data.data, data);
+
+		// Find all channels that aren't the one we just received from and send
+		this.directPeers
+			.filter((peer) => peer.pc !== pc)
+			.forEach((peer) => {
+				data.hops++;
+				peer.channel.send(JSON.stringify(data));
+			});
 	};
 };
 
 PeerNet.prototype.send = function sendMessage(type, data) {
 	this.directPeers.forEach((peer) => {
-		peer.channel.send(JSON.stringify({ type, data, hops: 0 }));
+		peer.channel.send(JSON.stringify({
+			id: Math.floor(Math.random() * 1e9).toString(), // @todo: better ID
+			type,
+			data,
+			hops: 0,
+			time: Date.now()
+		}));
 	});
 };
