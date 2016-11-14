@@ -1,5 +1,5 @@
 {
-  "name": "p2p-net",
+  "name": "webrtc-net",
   "version": "0.1.0",
   "description": "",
   "main": "",
@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/callumacrae/p2p-net.git"
+    "url": "git+https://github.com/callumacrae/webrtc-net.git"
   },
   "author": "Callum Macrae <callum@macr.ae>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/callumacrae/p2p-net/issues"
+    "url": "https://github.com/callumacrae/webrtc-net/issues"
   },
-  "homepage": "https://github.com/callumacrae/p2p-net#readme",
+  "homepage": "https://github.com/callumacrae/webrtc-net#readme",
   "dependencies": {
     "eventemitter3": "^2.0.2",
     "rxjs": "^5.0.0-rc.2",

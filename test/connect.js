@@ -1,42 +1,42 @@
 describe('Peernet simple connection', () => {
 	it('should connect', (done) => {
-		const peernet1 = new PeerNet();
-		const peernet2 = new PeerNet();
+		const webRTCnet1 = new WebRTCNet();
+		const webRTCnet2 = new WebRTCNet();
 
-		peernet1.getToken()
+		webRTCnet1.getToken()
 			.then((token) => {
 				should(token).not.be.null();
-				peernet2.invite(token);
+				webRTCnet2.invite(token);
 			});
 
-		peernet1.on('connect', () => {
-			peernet1.directPeers.length.should.equal(1);
-			peernet2.directPeers.length.should.equal(1);
+		webRTCnet1.on('connect', () => {
+			webRTCnet1.directPeers.length.should.equal(1);
+			webRTCnet2.directPeers.length.should.equal(1);
 			done();
 		});
 	});
 
 	it('should connect twice!', (done) => {
-		const peernet1 = new PeerNet();
-		const peernet2 = new PeerNet();
-		const peernet3 = new PeerNet();
+		const webRTCnet1 = new WebRTCNet();
+		const webRTCnet2 = new WebRTCNet();
+		const webRTCnet3 = new WebRTCNet();
 
-		peernet1.getToken()
-			.then((token) => peernet2.invite(token));
+		webRTCnet1.getToken()
+			.then((token) => webRTCnet2.invite(token));
 
-		peernet3.getToken()
-			.then((token) => peernet2.invite(token));
+		webRTCnet3.getToken()
+			.then((token) => webRTCnet2.invite(token));
 
 		let connected = 0;
 
-		peernet1.on('connect', () => {
+		webRTCnet1.on('connect', () => {
 			connected++;
 			if (connected === 2) {
 				finishTest();
 			}
 		});
 
-		peernet3.on('connect', () => {
+		webRTCnet3.on('connect', () => {
 			connected++;
 			if (connected === 2) {
 				finishTest();
@@ -44,25 +44,25 @@ describe('Peernet simple connection', () => {
 		});
 
 		function finishTest() {
-			peernet1.directPeers.length.should.equal(1);
-			peernet2.directPeers.length.should.equal(2);
-			peernet3.directPeers.length.should.equal(1);
+			webRTCnet1.directPeers.length.should.equal(1);
+			webRTCnet2.directPeers.length.should.equal(2);
+			webRTCnet3.directPeers.length.should.equal(1);
 			done();
 		}
 	});
 
 	it('should broadcast message', (done) => {
-		const peernet1 = new PeerNet();
-		const peernet2 = new PeerNet();
+		const webRTCnet1 = new WebRTCNet();
+		const webRTCnet2 = new WebRTCNet();
 
-		peernet1.getToken()
-			.then((token) => peernet2.invite(token));
+		webRTCnet1.getToken()
+			.then((token) => webRTCnet2.invite(token));
 
-		peernet1.on('connect', () => {
-			peernet1.broadcast('hello world');
+		webRTCnet1.on('connect', () => {
+			webRTCnet1.broadcast('hello world');
 		});
 
-		peernet2.on('message', (msg, e) => {
+		webRTCnet2.on('message', (msg, e) => {
 			msg.should.equal('hello world');
 			e.data.should.equal('hello world');
 			done();
@@ -70,17 +70,17 @@ describe('Peernet simple connection', () => {
 	});
 
 	it('should broadcast non-string message', (done) => {
-		const peernet1 = new PeerNet();
-		const peernet2 = new PeerNet();
+		const webRTCnet1 = new WebRTCNet();
+		const webRTCnet2 = new WebRTCNet();
 
-		peernet1.getToken()
-			.then((token) => peernet2.invite(token));
+		webRTCnet1.getToken()
+			.then((token) => webRTCnet2.invite(token));
 
-		peernet1.on('connect', () => {
-			peernet1.broadcast([1, 2, 3]);
+		webRTCnet1.on('connect', () => {
+			webRTCnet1.broadcast([1, 2, 3]);
 		});
 
-		peernet2.on('message', (msg, e) => {
+		webRTCnet2.on('message', (msg, e) => {
 			msg.should.eql([1, 2, 3]);
 			e.data.should.equal(msg);
 			done();
@@ -88,35 +88,35 @@ describe('Peernet simple connection', () => {
 	});
 
 	it('should broadcast data through multiple peers', (done) => {
-		const peernet1 = new PeerNet();
-		const peernet2 = new PeerNet();
-		const peernet3 = new PeerNet();
+		const webRTCnet1 = new WebRTCNet();
+		const webRTCnet2 = new WebRTCNet();
+		const webRTCnet3 = new WebRTCNet();
 
-		peernet1.getToken()
-			.then((token) => peernet2.invite(token));
+		webRTCnet1.getToken()
+			.then((token) => webRTCnet2.invite(token));
 
-		peernet3.getToken()
-			.then((token) => peernet2.invite(token));
+		webRTCnet3.getToken()
+			.then((token) => webRTCnet2.invite(token));
 
 		let connected = 0;
 
-		peernet1.on('connect', () => {
+		webRTCnet1.on('connect', () => {
 			connected++;
 			if (connected === 2) {
-				peernet1.broadcast([1, 2, 4]);
+				webRTCnet1.broadcast([1, 2, 4]);
 			}
 		});
 
-		peernet3.on('connect', () => {
+		webRTCnet3.on('connect', () => {
 			connected++;
 			if (connected === 2) {
-				peernet1.broadcast([1, 2, 4]);
+				webRTCnet1.broadcast([1, 2, 4]);
 			}
 		});
 
 		let peer2Received = false;
 
-		peernet2.on('message', (msg, e) => {
+		webRTCnet2.on('message', (msg, e) => {
 			peer2Received = true;
 			msg.should.eql([1, 2, 4]);
 			e.data.should.equal(msg);
@@ -125,7 +125,7 @@ describe('Peernet simple connection', () => {
 			e.path[0].should.be.a.Number();
 		});
 
-		peernet3.on('message', (msg, e) => {
+		webRTCnet3.on('message', (msg, e) => {
 			peer2Received.should.equal(true);
 			msg.should.eql([1, 2, 4]);
 			e.data.should.equal(msg);
@@ -140,43 +140,43 @@ describe('Peernet simple connection', () => {
 	});
 
 	it('should support insecure DMing', (done) => {
-		const peernet1 = new PeerNet();
-		const peernet2 = new PeerNet();
-		const peernet3 = new PeerNet();
+		const webRTCnet1 = new WebRTCNet();
+		const webRTCnet2 = new WebRTCNet();
+		const webRTCnet3 = new WebRTCNet();
 
-		peernet1.getToken()
-			.then((token) => peernet2.invite(token));
+		webRTCnet1.getToken()
+			.then((token) => webRTCnet2.invite(token));
 
-		peernet3.getToken()
-			.then((token) => peernet2.invite(token));
+		webRTCnet3.getToken()
+			.then((token) => webRTCnet2.invite(token));
 
 		let connected = 0;
 
-		peernet1.on('connect', () => {
+		webRTCnet1.on('connect', () => {
 			connected++;
 			if (connected === 2) {
-				peernet1.broadcast('test');
+				webRTCnet1.broadcast('test');
 			}
 		});
 
-		peernet3.on('connect', () => {
+		webRTCnet3.on('connect', () => {
 			connected++;
 			if (connected === 2) {
-				peernet1.broadcast('test');
+				webRTCnet1.broadcast('test');
 			}
 		});
 
-		peernet3.on('message', (msg, e) => {
+		webRTCnet3.on('message', (msg, e) => {
 			// Reply using insecure DM
-			peernet3.insecureDm(e.path, { hello: 'peer' })
+			webRTCnet3.insecureDm(e.path, { hello: 'peer' })
 		});
 
-		// if peernet2 emits anything, error
-		peernet2.on('insecureDm', () => {
+		// if webRTCnet2 emits anything, error
+		webRTCnet2.on('insecureDm', () => {
 			should.fail('Insecure DM received on peer 2: wrong!');
 		});
 
-		peernet1.on('insecureDm', (msg, e) => {
+		webRTCnet1.on('insecureDm', (msg, e) => {
 			msg.should.eql({ hello: 'peer' });
 			e.data.should.equal(msg);
 			e.hops.should.equal(2);

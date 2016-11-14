@@ -1,6 +1,6 @@
 var RTCPeerConnection = webkitRTCPeerConnection;
 
-function PeerNet(config) {
+function WebRTCNet(config) {
 	this.directPeers = [];
 	this.receivedMessages = [];
 
@@ -10,10 +10,10 @@ function PeerNet(config) {
 	EventEmitter.call(this);
 }
 
-PeerNet.prototype = Object.create(EventEmitter.prototype);
-PeerNet.prototype.messageHandlers = {};
+WebRTCNet.prototype = Object.create(EventEmitter.prototype);
+WebRTCNet.prototype.messageHandlers = {};
 
-PeerNet.prototype.getToken = function getToken() {
+WebRTCNet.prototype.getToken = function getToken() {
 	return new Promise((resolve) => {
 		var pc, channel, token;
 
@@ -78,7 +78,7 @@ PeerNet.prototype.getToken = function getToken() {
 };
 
 
-PeerNet.prototype.invite = function inviteToken(token) {
+WebRTCNet.prototype.invite = function inviteToken(token) {
 	var pc, channel;
 
 	var socket = new WebSocket('ws://localhost:9001');
@@ -133,11 +133,11 @@ PeerNet.prototype.invite = function inviteToken(token) {
 	};
 };
 
-PeerNet.prototype.messageHandlers.token = function handleToken(data, peerObj) {
+WebRTCNet.prototype.messageHandlers.token = function handleToken(data, peerObj) {
 	peerObj.token = data.token;
 };
 
-PeerNet.prototype._addDirectPeer = function (pc, channel) {
+WebRTCNet.prototype._addDirectPeer = function (pc, channel) {
 	const peerObj = { pc, channel };
 	this.directPeers.push(peerObj);
 
@@ -164,7 +164,7 @@ PeerNet.prototype._addDirectPeer = function (pc, channel) {
 	};
 };
 
-PeerNet.prototype.broadcast = function sendMessage(data) {
+WebRTCNet.prototype.broadcast = function sendMessage(data) {
 	this.directPeers.forEach((peer) => {
 		peer.channel.send(JSON.stringify({
 			id: Math.floor(Math.random() * 1e9).toString(), // @todo: better ID
@@ -178,7 +178,7 @@ PeerNet.prototype.broadcast = function sendMessage(data) {
 	});
 };
 
-PeerNet.prototype.messageHandlers.message = function handleMessage(data, peerObj) {
+WebRTCNet.prototype.messageHandlers.message = function handleMessage(data, peerObj) {
 	this.emit('message', data.data, data);
 
 	data.path.push(this.token);
@@ -191,7 +191,7 @@ PeerNet.prototype.messageHandlers.message = function handleMessage(data, peerObj
 		});
 };
 
-PeerNet.prototype.insecureDm = function sendInsecureDm(toPath, data) {
+WebRTCNet.prototype.insecureDm = function sendInsecureDm(toPath, data) {
 	const toToken = toPath[toPath.length - 1];
 	const toPeer = this.directPeers.find(({ token }) => token === toToken);
 
@@ -206,7 +206,7 @@ PeerNet.prototype.insecureDm = function sendInsecureDm(toPath, data) {
 	}));
 };
 
-PeerNet.prototype.messageHandlers.insecureDm = function handleInsecureDm(data) {
+WebRTCNet.prototype.messageHandlers.insecureDm = function handleInsecureDm(data) {
 	if (data.path[0] === this.token) {
 		this.emit('insecureDm', data.data, data);
 	} else {
